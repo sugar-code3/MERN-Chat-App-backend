@@ -36,23 +36,38 @@ const newGroupChat = TryCatch(async (req, res, next) => {
     message: "Group Created",
   });
 });
-
 const getMyChats = TryCatch(async (req, res, next) => {
+  // Check if user is authenticated
+  if (!req.user) {
+    return res.status(400).json({ success: false, message: "User not authenticated" });
+  }
+
+  console.log("User:", req.user);
+
+  // Fetch chats from the database
   const chats = await Chat.find({ members: req.user }).populate(
     "members",
     "name avatar"
   );
+  console.log("Chats found:", chats);
 
+  // Transform chats
   const transformedChats = chats.map(({ _id, name, members, groupChat }) => {
     const otherMember = getOtherMember(members, req.user);
+
+    // Ensure members array is not empty
+    if (!members || members.length === 0) {
+      console.error("No members found in the chat");
+      return;
+    }
 
     return {
       _id,
       groupChat,
       avatar: groupChat
-        ? members.slice(0, 3).map(({ avatar }) => avatar.url)
-        : [otherMember.avatar.url],
-      name: groupChat ? name : otherMember.name,
+        ? members.slice(0, 3).map(({ avatar }) => avatar?.url)
+        : [otherMember?.avatar?.url],
+      name: groupChat ? name : otherMember?.name,
       members: members.reduce((prev, curr) => {
         if (curr._id.toString() !== req.user.toString()) {
           prev.push(curr._id);
@@ -61,6 +76,8 @@ const getMyChats = TryCatch(async (req, res, next) => {
       }, []),
     };
   });
+
+  console.log("Transformed chats:", transformedChats);
 
   return res.status(200).json({
     success: true,
