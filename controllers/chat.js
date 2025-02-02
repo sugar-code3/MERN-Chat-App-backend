@@ -42,14 +42,11 @@ const getMyChats = TryCatch(async (req, res, next) => {
     return res.status(400).json({ success: false, message: "User not authenticated" });
   }
 
-  console.log("User:", req.user);
-
   // Fetch chats from the database
   const chats = await Chat.find({ members: req.user }).populate(
     "members",
     "name avatar"
   );
-  console.log("Chats found:", chats);
 
   // Transform chats
   const transformedChats = chats.map(({ _id, name, members, groupChat }) => {
@@ -77,7 +74,6 @@ const getMyChats = TryCatch(async (req, res, next) => {
     };
   });
 
-  console.log("Transformed chats:", transformedChats);
 
   return res.status(200).json({
     success: true,
